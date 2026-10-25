@@ -3,20 +3,48 @@ from tkinter import messagebox as mb
 from tkinter import ttk
 import requests
 
+
 def update_base1_label(event):
     code = base1_combobox.get()
     if code in currencies:
         base1_label.config(text=currencies[code])
+
 
 def update_base2_label(event):
     code = base2_combobox.get()
     if code in currencies:
         base2_label.config(text=currencies[code])
 
+
 def update_target_label(event):
     code = target_combobox.get()
     if code in currencies:
         target_label.config(text=currencies[code])
+
+
+def show_custom_result(messages):
+    result_window = Toplevel(root)
+    result_window.title('Курсы обмена')
+    result_window.resizable(False, False)
+
+    Label(result_window, text='\n'.join(messages),
+          font=('Arial', 14, 'bold'),
+          fg='blue',
+          justify=CENTER).pack(padx=40, pady=20)
+
+    Button(result_window, text='OK', command=result_window.destroy, width=10).pack(pady=(0, 15))
+
+    result_window.update_idletasks()
+
+    root_x = root.winfo_x()
+    root_y = root.winfo_y()
+    root_width = root.winfo_width()
+
+    new_x = root_x + root_width + 10
+    new_y = root_y + 30
+
+    result_window.geometry(f"+{new_x}+{new_y}")
+
 
 def exchange():
     base1_code = base1_combobox.get().strip()
@@ -29,7 +57,6 @@ def exchange():
 
     result_messages = []
 
-    # Запрос для первой базовой валюты
     try:
         res1 = requests.get(f'https://open.er-api.com/v6/latest/{base1_code}')
         res1.raise_for_status()
@@ -44,7 +71,6 @@ def exchange():
     except Exception as er:
         result_messages.append(f'Ошибка запроса для {base1_code}: {er}')
 
-    # Запрос для второй базовой валюты
     try:
         res2 = requests.get(f'https://open.er-api.com/v6/latest/{base2_code}')
         res2.raise_for_status()
@@ -59,10 +85,9 @@ def exchange():
     except Exception as er:
         result_messages.append(f'Ошибка запроса для {base2_code}: {er}')
 
-    # Вывод результатов
-    mb.showinfo('Курсы обмена', '\n'.join(result_messages))
+    show_custom_result(result_messages)
 
-# Расширенный список валют (+5 новых)
+
 currencies = {
     'EUR': 'Евро',
     'USD': 'Доллар США',
@@ -84,14 +109,17 @@ currencies = {
 
 root = Tk()
 root.title('Конвертация валют (Две базовые)')
-root.geometry('360x320')
+root.geometry('380x380')
+
+label_font = ('Times New Roman', 12, 'bold')
+label_color = 'red'
 
 Label(root, text='Первая базовая валюта').pack(pady=(10, 0))
 base1_combobox = ttk.Combobox(root, values=list(currencies.keys()), state="readonly")
 base1_combobox.pack(pady=3, padx=10)
 base1_combobox.bind('<<ComboboxSelected>>', update_base1_label)
 
-base1_label = ttk.Label(root, text="")
+base1_label = Label(root, text="", font=label_font, fg=label_color)
 base1_label.pack()
 
 Label(root, text='Вторая базовая валюта').pack(pady=(10, 0))
@@ -99,7 +127,7 @@ base2_combobox = ttk.Combobox(root, values=list(currencies.keys()), state="reado
 base2_combobox.pack(pady=3, padx=10)
 base2_combobox.bind('<<ComboboxSelected>>', update_base2_label)
 
-base2_label = ttk.Label(root, text="")
+base2_label = Label(root, text="", font=label_font, fg=label_color)
 base2_label.pack()
 
 Label(root, text='Целевая валюта').pack(pady=(10, 0))
@@ -107,7 +135,7 @@ target_combobox = ttk.Combobox(root, values=list(currencies.keys()), state="read
 target_combobox.pack(pady=3, padx=10)
 target_combobox.bind('<<ComboboxSelected>>', update_target_label)
 
-target_label = ttk.Label(root, text="")
+target_label = Label(root, text="", font=label_font, fg=label_color)
 target_label.pack()
 
 exchange_button = Button(root, text='Получить курсы обмена', command=exchange, bg='#4CAF50', fg='white',

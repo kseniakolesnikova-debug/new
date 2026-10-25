@@ -31,9 +31,7 @@ def exchange():
 
     # Запрос для первой базовой валюты
     try:
-
         res1 = requests.get(f'https://open.er-api.com/v6/latest/{base1_code}')
-
         res1.raise_for_status()
         data1 = res1.json()
         rates1 = data1.get('rates', {})
@@ -64,6 +62,7 @@ def exchange():
     # Вывод результатов
     mb.showinfo('Курсы обмена', '\n'.join(result_messages))
 
+# Расширенный список валют (+5 новых)
 currencies = {
     'EUR': 'Евро',
     'USD': 'Доллар США',
@@ -75,7 +74,12 @@ currencies = {
     'CNY': 'Китайский юань',
     'RUB': 'Российский рубль',
     'KZT': 'Казахстанский тенге',
-    'UZS': 'Узбекский сум'
+    'UZS': 'Узбекский сум',
+    'TRY': 'Турецкая лира',
+    'AED': 'Дирхам ОАЭ',
+    'BYN': 'Белорусский рубль',
+    'AMD': 'Армянский драм',
+    'GEL': 'Грузинский лари'
 }
 
 root = Tk()

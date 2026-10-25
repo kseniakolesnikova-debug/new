@@ -70,15 +70,15 @@ def handler():
         if abs(d) < abs(n):
             int_part = int(n // d)
             n = int(n % d)
+        if n == d:
+            n = ''
+            d = ''
+            int_part = '1'
 
         if n == 0:
             n = ''
             d = ''
 
-        if n == d:
-            n = ''
-            d = ''
-            int_part = '1'
 
         num3.config(text=n)
         den3.config(text=d)

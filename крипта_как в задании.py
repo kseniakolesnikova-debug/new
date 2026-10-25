@@ -1,6 +1,16 @@
+import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 import requests
+
+# Настройка сквозного логирования в файл по спецификации ТЗ
+logging.basicConfig(
+    filename="crypto_tracker.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    encoding="utf-8",
+)
 
 
 class CryptoTrackerApp:
@@ -47,6 +57,8 @@ class CryptoTrackerApp:
         }
 
         self.create_widgets()
+        logging.info("Приложение успешно запущено.")
+
         # По умолчанию загружаем данные для выбранной в комбобоксе валюты
         self.fetch_prices()
 
@@ -87,7 +99,9 @@ class CryptoTrackerApp:
         )
         self.crypto_combobox.current(0)  # Выбираем первый пункт по умолчанию
         self.crypto_combobox.pack(side=tk.LEFT)
-        self.crypto_combobox.bind("<<ComboboxSelected>>", lambda e: self.fetch_prices())
+        self.crypto_combobox.bind(
+            "<<ComboboxSelected>>", lambda e: self.on_combobox_change()
+        )
 
         # Фрейм для таблицы
         self.table_frame = tk.Frame(self.root, bg="#f4f6f9")
@@ -151,12 +165,16 @@ class CryptoTrackerApp:
         )
         self.status_label.pack(side=tk.BOTTOM, pady=5)
 
+    def on_combobox_change(self):
+        selected_item = self.crypto_combobox.get()
+        logging.info(f'Пользователь выбрал фильтр: "{selected_item}".')
+        self.fetch_prices()
+
     def fetch_prices(self):
         self.refresh_btn.config(state=tk.DISABLED)
         self.status_label.config(text="Обновление данных...", fg="#7f8c8d")
         self.root.update_idletasks()
 
-        # Определяем, какие ID запрашивать на основе выбора в Combobox
         selected_item = self.crypto_combobox.get()
 
         if selected_item == "Все монеты разом":
@@ -167,12 +185,19 @@ class CryptoTrackerApp:
         # Блок формирования параметров запроса (сохранен без изменений)
         ids_param = ",".join(target_coins.values())
         url = "https://api.coingecko.com/api/v3/simple/price"
-        params = {"ids": ids_param, "vs_currencies": "usd", "include_24hr_change": "true"}
+        params = {
+            "ids": ids_param,
+            "vs_currencies": "usd",
+            "include_24hr_change": "true",
+        }
 
         try:
             response = requests.get(url, params=params, timeout=10)
 
             if response.status_code == 429:
+                logging.warning(
+                    "Превышен лимит запросов к API. Код ответа сервера: 429."
+                )
                 messagebox.showwarning(
                     "Превышен лимит",
                     "Слишком много запросов! Пожалуйста, подождите минуту перед следующим обновлением.",
@@ -195,15 +220,17 @@ class CryptoTrackerApp:
                     price = data[coin_id].get("usd", 0.0)
                     change = data[coin_id].get("usd_24h_change", 0.0)
 
-                    # Гибкое форматирование для дешевых мемкоинов
+                    # Гибкое форматирование цены по правилам ТЗ
                     if price >= 1.0:
                         price_str = f"${price:,.2f}"
                     elif price > 0.0:
-                        price_str = f"${price:.8f}"  # Больше знаков для точности отображения
+                        price_str = f"${price:.8f}"
                     else:
                         price_str = "$0.00"
 
-                    change_str = f"{change:+.2f}%" if change is not None else "0.00%"
+                    change_str = (
+                        f"{change:+.2f}%" if change is not None else "0.00%"
+                    )
 
                     tag = "up" if (change and change >= 0) else "down"
 
@@ -218,11 +245,14 @@ class CryptoTrackerApp:
             self.tree.tag_configure("down", foreground="#e74c3c")
 
             self.status_label.config(text="Данные успешно обновлены", fg="#27ae60")
+            logging.info(
+                f"Запрос к API отправлен успешно. Обновлены данные для {len(target_coins)} актив(ов)."
+            )
 
         except requests.exceptions.RequestException as e:
-            messagebox.showerror(
-                "Ошибка сети", f"Не удалось получить данные:\n{e}"
-            )
+            error_msg = f"Ошибка сети: {e}"
+            logging.error(error_msg)
+            messagebox.showerror("Ошибка сети", f"Не удалось получить данные:\n{e}")
             self.status_label.config(
                 text="Ошибка при обновлении данных.", fg="#e74c3c"
             )
